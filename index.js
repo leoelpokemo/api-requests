@@ -1,8 +1,10 @@
 import express from "express";
+import cors from "cors";
 import { connectDB } from "./db.js";
 import { Card } from "./models/Card.js";
 const app = express();
 app.use(express.json());
+app.use(cors());
 connectDB();
 
 //Create
@@ -42,7 +44,30 @@ app.get("/getCard/:id", async (req, res) => {
 }); 
 
 //UPDATE
-app.put("/cards/:id", async (req, res) => {
+app.put("/updateEntireCard/:id", async (req, res) => {
+  try {
+    const { id } = req.params; // obtenemos el ID de la URL
+    const updates = req.body; //  los campos que quieres actualizar
+
+    // Usamos findByIdAndUpdate para actualizar parcialmente
+    const updatedCard = await Card.findByIdAndUpdate(id, updates, {
+      new: true,
+    });
+
+    if (!updatedCard) {
+      return res.status(404).json({ message: "Card not found" });
+    }
+
+    res.status(200).json({
+      message: "Card updated successfully",
+      data: updatedCard,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error updating card" });
+  }
+});
+app.patch("/updateCard/:id", async (req, res) => {
   try {
     const { id } = req.params; // obtenemos el ID de la URL
     const updates = req.body; //  los campos que quieres actualizar
@@ -67,7 +92,7 @@ app.put("/cards/:id", async (req, res) => {
 });
 
 //DELETE
-app.delete("/cards/:id", async (req, res) => {
+app.delete("/DeleteCard/:id", async (req, res) => {
   try {
     const { id } = req.params; //  se lee el ID de la URL
     const deletedCard = await Card.findByIdAndDelete(id); // se elimina la tarjeta por id
@@ -103,3 +128,213 @@ app.post("/send", (req, res) => {
 app.listen(3000, () => {
   console.log("Server started at http://localhost:3000");
 });
+// ENDPOINT QUE MUESTRA TODA LA INFORMACIÓN DE RESPUESTA
+app.get("/api/info", async (req, res) => {
+  try {
+    // Obtener todas las cards para mostrar datos de ejemplo
+    const cards = await Card.find().limit(5);
+    
+    // Información completa sobre todos los endpoints disponibles
+    const apiInfo = {
+      message: "API Information - All Endpoints Summary",
+      timestamp: new Date().toISOString(),
+      baseURL: "http://localhost:3000",
+      
+      endpoints: {
+        // CREATE ENDPOINTS
+        create: {
+          "POST /createCard": {
+            description: "Create a new card",
+            requestBody: "Object with card data",
+            successResponse: {
+              status: 201,
+              body: "Created card object",
+              message: "Card created successfully"
+            },
+            errorResponse: {
+              status: 400,
+              message: "Error creating card"
+            }
+          }
+        },
+        
+        // READ ENDPOINTS
+        read: {
+          "GET /getAllCards": {
+            description: "Get all cards",
+            successResponse: {
+              status: 200,
+              body: "Array of card objects"
+            },
+            errorResponse: {
+              status: 500,
+              message: "Error retrieving cards"
+            }
+          },
+          "GET /getCard/:id": {
+            description: "Get a specific card by ID",
+            parameters: {
+              id: "Card ID (MongoDB ObjectId)"
+            },
+            successResponse: {
+              status: 200,
+              body: "Card object"
+            },
+            errorResponses: [
+              {
+                status: 404,
+                message: "Card not found"
+              },
+              {
+                status: 500,
+                message: "Error retrieving cards"
+              }
+            ]
+          }
+        },
+        
+        // UPDATE ENDPOINTS
+        update: {
+          "PUT /updateEntireCard/:id": {
+            description: "Update entire card (replace)",
+            parameters: {
+              id: "Card ID (MongoDB ObjectId)"
+            },
+            requestBody: "Complete card object",
+            successResponse: {
+              status: 200,
+              body: {
+                message: "Card updated successfully",
+                data: "Updated card object"
+              }
+            },
+            errorResponses: [
+              {
+                status: 404,
+                message: "Card not found"
+              },
+              {
+                status: 500,
+                message: "Error updating card"
+              }
+            ]
+          },
+          "PATCH /updateCard/:id": {
+            description: "Partially update card",
+            parameters: {
+              id: "Card ID (MongoDB ObjectId)"
+            },
+            requestBody: "Partial card object (fields to update)",
+            successResponse: {
+              status: 200,
+              body: {
+                message: "Card updated successfully",
+                data: "Updated card object"
+              }
+            },
+            errorResponses: [
+              {
+                status: 404,
+                message: "Card not found"
+              },
+              {
+                status: 500,
+                message: "Error updating card"
+              }
+            ]
+          }
+        },
+        
+        // DELETE ENDPOINTS
+        delete: {
+          "DELETE /DeleteCard/:id": {
+            description: "Delete a card by ID",
+            parameters: {
+              id: "Card ID (MongoDB ObjectId)"
+            },
+            successResponse: {
+              status: 200,
+              body: {
+                message: "Card deleted successfully"
+              }
+            },
+            errorResponses: [
+              {
+                status: 404,
+                message: "Card not found"
+              },
+              {
+                status: 500,
+                message: "Error deleting card"
+              }
+            ]
+          }
+        },
+        
+        // OTHER ENDPOINTS
+        other: {
+          "GET /hola": {
+            description: "Spanish greeting endpoint",
+            successResponse: {
+              status: 200,
+              body: "¡Hello world from server! :D"
+            }
+          },
+          "GET /hello": {
+            description: "English greeting endpoint",
+            successResponse: {
+              status: 200,
+              body: "¡Hello world from server! Express :D"
+            }
+          },
+          "POST /send": {
+            description: "Receive user data",
+            requestBody: {
+              user: "Username",
+              email: "User email"
+            },
+            successResponse: {
+              status: 200,
+              body: "Data received successfully"
+            }
+          }
+        }
+      },
+      
+      // Sample data (primeras 5 cards)
+      sampleData: {
+        totalCards: cards.length,
+        cards: cards
+      },
+      
+      // Statistics
+      statistics: {
+        totalEndpoints: 9,
+        byMethod: {
+          GET: 4,
+          POST: 3,
+          PUT: 1,
+          PATCH: 1,
+          DELETE: 1
+        },
+        byCategory: {
+          CRUD: 6,
+          Utility: 3
+        }
+      }
+    };
+    
+    res.status(200).json(apiInfo);
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error retrieving API information",
+      error: error.message
+    });
+  }
+});
+
+
+
+//cambio hecho por mi para que haga review en github
