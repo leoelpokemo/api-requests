@@ -67,32 +67,8 @@ app.put("/updateEntireCard/:id", async (req, res) => {
     res.status(500).json({ message: "Error updating card" });
   }
 });
-app.patch("/updateCard/:id", async (req, res) => {
-  try {
-    const { id } = req.params; // obtenemos el ID de la URL
-    const updates = req.body; //  los campos que quieres actualizar
-
-    // Usamos findByIdAndUpdate para actualizar parcialmente
-    const updatedCard = await Card.findByIdAndUpdate(id, updates, {
-      new: true,
-    });
-
-    if (!updatedCard) {
-      return res.status(404).json({ message: "Card not found" });
-    }
-
-    res.status(200).json({
-      message: "Card updated successfully",
-      data: updatedCard,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error updating card" });
-  }
-});
-
 //DELETE
-app.delete("/DeleteCard/:id", async (req, res) => {
+app.delete("/deleteCard/:id", async (req, res) => {
   try {
     const { id } = req.params; //  se lee el ID de la URL
     const deletedCard = await Card.findByIdAndDelete(id); // se elimina la tarjeta por id
@@ -218,36 +194,12 @@ app.get("/api/info", async (req, res) => {
                 message: "Error updating card"
               }
             ]
-          },
-          "PATCH /updateCard/:id": {
-            description: "Partially update card",
-            parameters: {
-              id: "Card ID (MongoDB ObjectId)"
-            },
-            requestBody: "Partial card object (fields to update)",
-            successResponse: {
-              status: 200,
-              body: {
-                message: "Card updated successfully",
-                data: "Updated card object"
-              }
-            },
-            errorResponses: [
-              {
-                status: 404,
-                message: "Card not found"
-              },
-              {
-                status: 500,
-                message: "Error updating card"
-              }
-            ]
           }
         },
         
         // DELETE ENDPOINTS
         delete: {
-          "DELETE /DeleteCard/:id": {
+          "DELETE /deleteCard/:id": {
             description: "Delete a card by ID",
             parameters: {
               id: "Card ID (MongoDB ObjectId)"
@@ -333,6 +285,10 @@ app.get("/api/info", async (req, res) => {
       error: error.message
     });
   }
+});
+
+app.listen(3000, () => {
+  console.log("Server started at http://localhost:3000");
 });
 
 
